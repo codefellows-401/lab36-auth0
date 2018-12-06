@@ -5,33 +5,65 @@
 
 // Dependencies
 import express from 'express';
+
+let app = express();
+
 import morgan from 'morgan';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRouter from './auth/router.js';
-import auth from './auth/middleware.js';
 import errorHandler from './middleware/error.js';
 import notFound from './middleware/404.js';
-import auth0 from 'auth0-js';
+import session from 'express-session';
 
-let app = express();
+// session that will save the cookie
+var sess = {
+  secret: 'CHANGE THIS SECRET',
+  cookie: {},
+  resave: false,
+  saveUninitialized: true
+};
 
-//------------------------------
-//* Auth0 Setup
-//------------------------------
-// export default class Auth {
-//   auth0 = new auth0.WebAuth( {
-//     domain: process.env.CLIENT_URL,
-//     clientID: 'ZwWUqlwLx2w0LLYgGbbWxVTlgz6NChOC',
-//     redirectUri: 'http://localhost:3000/callback',
-//     responseType: 'token id_token',
-//     scope: 'openid'
-//   });
+if (app.get('env') === 'production') {
+  sess.cookie.secure = true; // serve secure cookies, requires https
+}
 
-//   login() {
-//     this.auth0.authorize();
-//   }
-// }
+app.use(session(sess));
+
+// magic right here
+var passport = require('passport');
+var Auth0Strategy = require('passport-auth0');
+
+// Configure Passport to use Auth0
+var strategy = new Auth0Strategy(
+  {
+    domain: process.env.AUTH0_DOMAIN,
+    clientID: process.env.AUTH0_CLIENT_ID,
+    clientSecret: process.env.AUTH0_CLIENT_SECRET,
+    callbackURL:
+      process.env.AUTH0_CALLBACK_URL || 'http://localhost:3000/callback'
+  },
+  function (accessToken, refreshToken, extraParams, profile, done) {
+    // accessToken is the token to call Auth0 API (not needed in the most cases)
+    // extraParams.id_token has the JSON Web Token
+    // profile has all the information from the user
+    return done(null, profile);
+  }
+);
+
+passport.use(strategy);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// smaller payload
+passport.serializeUser(function (user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function (user, done) {
+  done(null, user);
+});
 
 //------------------------------
 //* Middleware
@@ -46,9 +78,6 @@ app.use(cookieParser());
 // Routing
 app.use(express.static('./public'));
 app.use(authRouter);
-// app.get('/', auth(), (req, res) => {
-//   res.send('We Are In');
-// });
 
 // Error Handling
 app.use(notFound);
