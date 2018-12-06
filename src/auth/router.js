@@ -18,11 +18,12 @@ authRouter.get('/', (req, res, next) => {
 });
 
 // Perform the login, after login Auth0 will redirect to callback
+
 authRouter.get('/login', passport.authenticate('auth0', {
   scope: 'openid email profile'
 }), function (req, res) {
   res.redirect('/logged-in');
-});
+})
 
 // Perform the final stage of authentication and redirect to previously requested URL or '/user'
 authRouter.get('/oauth', (req, res, next) => {
