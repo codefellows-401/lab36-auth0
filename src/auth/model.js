@@ -41,11 +41,11 @@ userSchema.pre('save', function(next) {
 });
 
 userSchema.statics.createFromOAuth = function(incoming) {
-  if ( ! incoming || ! incoming.email ) {
+  if ( ! incoming || ! incoming._json.email ) {
     return Promise.reject('VALIDATION ERROR: missing username/email or password ');
   }
 
-  return this.findOne({email:incoming.email})
+  return this.findOne({email:incoming._json.email})
     .then(user => {
       if ( ! user ) { throw new Error ('User Not Found'); }
       console.log('Welcome Back', user.username);
@@ -53,12 +53,12 @@ userSchema.statics.createFromOAuth = function(incoming) {
     })
     .catch( error => {
     // Create the user
-      let username = incoming.email;
+      let username = incoming._json.email;
       let password = 'none';
       return this.create({
         username: username,
         password: password,
-        email: incoming.email,
+        email: incoming._json.email,
       });
     });
 };

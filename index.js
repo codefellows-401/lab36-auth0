@@ -7,6 +7,7 @@ console.clear();
 // Dependencies
 require('dotenv').config();
 require('babel-register');
+require('babel-polyfill');
 
 //------------------------------
 //* Initiate Servers
